@@ -1,5 +1,7 @@
 # React Portfolio Projects
 
+This contains all my React Portfolio Projects.
+
 This repository contains multiple independent React projects. Each project lives in its own folder and keeps its own `package.json` and lockfile.
 
 ## Projects
