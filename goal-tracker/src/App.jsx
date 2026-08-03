@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const initialGoal = [
   {
@@ -39,6 +39,18 @@ export default function App() {
 
   function handleNewGoal() {
     setShowAddGoal(!showAddGoal);
+    setSelectedGoal(null);
+  }
+
+  function handleGoalProgress(newValue) {
+    setGoalList((goals) =>
+      goals.map((goal) =>
+        goal.id == selectedGoal.id
+          ? { ...goal, currentStatus: newValue }
+          : goal,
+      ),
+    );
+    setSelectedGoal(null);
   }
 
   return (
@@ -56,9 +68,17 @@ export default function App() {
             <GoalCardList
               onGoalList={goalList}
               onSelectGoal={setSelectedGoal}
+              showAddGoal={setShowAddGoal}
+              selectedGoal={selectedGoal}
             />
           </aside>
           <main className="p-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            {!showAddGoal && !selectedGoal ? (
+              <GoalDashboard goalList={goalList} />
+            ) : (
+              ""
+            )}
+
             {showAddGoal && (
               <AddGoalForm
                 onFormSubmit={handleGoalList}
@@ -67,11 +87,91 @@ export default function App() {
               />
             )}
 
-            <UpdateProgressForm goalList={goalList} />
+            {selectedGoal && (
+              <UpdateProgressForm
+                selectedGoal={selectedGoal}
+                onGoalProgress={handleGoalProgress}
+              />
+            )}
           </main>
         </div>
       </div>
     </section>
+  );
+}
+
+function ProgressBar({ percentage }) {
+  return (
+    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
+      <div
+        className="h-full bg-green-900 rounded-full"
+        style={{ width: `${!percentage ? 0 : percentage}%` }}
+      ></div>
+    </div>
+  );
+}
+
+function GoalDashboard({ goalList }) {
+  const inProgress = goalList.filter(
+    (goal) => goal.currentStatus > 0 && goal.currentStatus < goal.target,
+  );
+  const needToStart = goalList.filter((goal) => goal.currentStatus === 0);
+
+  const completedGoals = goalList.filter(
+    (goal) => goal.currentStatus === goal.target,
+  );
+
+  console.log(inProgress);
+  return (
+    <div className="sticky top-10">
+      <h1 className="text-4xl text-black mb-4 font-bold">Goals Dashboard</h1>
+      <div className="p-5 rounded-xl border border-gray-200 mb-4">
+        <h5 className="text-xl text-red-500 font-bold">Need to start</h5>
+        {needToStart.length ? (
+          <ol className="list-decimal pl-5">
+            {goalList.map(
+              (goal) =>
+                goal.currentStatus === 0 && <li key={goal.id}>{goal.goal}</li>,
+            )}
+          </ol>
+        ) : (
+          <p>Already goles are started</p>
+        )}
+      </div>
+      <div className="p-5 rounded-xl border border-gray-200 mb-4">
+        <h5 className="text-xl text-red-500 font-bold">
+          Currently in progress
+        </h5>
+        {inProgress.length != 0 ? (
+          <ol className="list-decimal pl-5">
+            {goalList.map(
+              (goal) =>
+                goal.currentStatus > 0 &&
+                goal.currentStatus < goal.target && (
+                  <li key={goal.id}>{goal.goal}</li>
+                ),
+            )}
+          </ol>
+        ) : (
+          <p>No goals currently in progress.</p>
+        )}
+      </div>
+      <div className="p-5 rounded-xl border border-gray-200 mb-4">
+        <h5 className="text-xl text-red-500 font-bold">Completed Goals</h5>
+        {completedGoals.length != 0 ? (
+          <ol className="list-decimal pl-5">
+            {goalList.map(
+              (goal) =>
+                goal.currentStatus === goal.target && (
+                  <li key={goal.id}>{goal.goal}</li>
+                ),
+            )}
+          </ol>
+        ) : (
+          <p>No goals are completed.</p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -86,25 +186,46 @@ function Button({ children, onClick }) {
   );
 }
 
-function GoalCardList({ onGoalList, onSelectGoal }) {
+function GoalCardList({ onGoalList, onSelectGoal, showAddGoal, selectedGoal }) {
+  // Sort the goals using useMemo for optimal performance
+  const sortedGoals = useMemo(() => {
+    return [...onGoalList].sort((a, b) => {
+      const aDone = a.currentStatus === a.target;
+      const bDone = b.currentStatus === b.target;
+      return aDone - bDone;
+    });
+  }, [onGoalList]); // Only re-runs if the 'goals' prop changes
   return (
     <div>
-      {onGoalList.map((goal) => (
-        <GoalCard details={goal} key={goal.id} onSelectGoal={onSelectGoal} />
+      {sortedGoals.map((goal) => (
+        <GoalCard
+          details={goal}
+          key={goal.id}
+          onSelectGoal={onSelectGoal}
+          showAddGoal={showAddGoal}
+          selectedGoal={selectedGoal}
+        />
       ))}
     </div>
   );
 }
 
-function GoalCard({ details, onSelectGoal }) {
-  const percentage = (details.currentStatus / details.target) * 100;
+function GoalCard({ details, onSelectGoal, showAddGoal, selectedGoal }) {
+  const percentage = Number(
+    ((details.currentStatus / details.target) * 100).toFixed(1),
+  );
+
+  const isSelected = selectedGoal?.id === details.id;
 
   function handleUpdateProgress() {
-    onSelectGoal(details.id);
+    onSelectGoal(isSelected ? null : details);
+    showAddGoal(false);
   }
 
   return (
-    <div className="rounded-xl border border-green-400 bg-green-100 p-6 shadow-sm mb-5">
+    <div
+      className={`rounded-xl border border-green-400 bg-green-100 p-6 shadow-sm mb-5 ${percentage === 100 && "opacity-40 pointer-events-none"}`}
+    >
       <div className="flex justify-between align-center mb-2">
         <span className="text-[12px] text-green-900 uppercase font-600">
           {details.tag}
@@ -143,14 +264,13 @@ function GoalCard({ details, onSelectGoal }) {
           </span>
         </div>
 
-        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
-          <div
-            className="h-full bg-green-900 rounded-full"
-            style={{ width: `${percentage}%` }}
-          ></div>
-        </div>
+        <ProgressBar percentage={percentage} />
       </div>
-      <Button onClick={handleUpdateProgress}>Update Progress</Button>
+      <div className="w-full text-right">
+        <Button onClick={handleUpdateProgress}>
+          {isSelected ? "Close" : "Update Progress"}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -179,7 +299,7 @@ function AddGoalForm({ onFormSubmit, existingGoalList, handleShowAddGoal }) {
     handleShowAddGoal(false);
   }
   return (
-    <form className="flex flex-wrap" onSubmit={handleForm}>
+    <form className="flex flex-wrap sticky top-10" onSubmit={handleForm}>
       <div className="mb-5 full">
         <h2 className="text-4xl font-extrabold text-gray-900 mb-1">
           Create New Goal
@@ -252,38 +372,47 @@ function AddGoalForm({ onFormSubmit, existingGoalList, handleShowAddGoal }) {
         />
       </div>
       <div className="flex h-[40px] gap-5">
-        <Button>Cancel</Button>
         <Button>Create A Goal</Button>
       </div>
     </form>
   );
 }
 
-function UpdateProgressForm({ goalList }) {
-  function handleForm() {}
+function UpdateProgressForm({ selectedGoal, onGoalProgress }) {
+  const [updatedStatus, setUpdatedStatus] = useState(
+    selectedGoal.currentStatus,
+  );
+  function handleForm(e) {
+    e.preventDefault();
+    const newValue = updatedStatus;
+    onGoalProgress(newValue);
+  }
   return (
-    <form className="flex flex-wrap" onSubmit={handleForm}>
-      <div className="mb-5 full">
-        <h2 className="text-4xl font-extrabold text-gray-900 mb-1">
-          Update Your Current Status of xxxxxxxxcurrentActiveTitle
+    <form className="flex flex-wrap sticky top-10" onSubmit={handleForm}>
+      <div className="mb-3 full">
+        <h2 className="text-2xl font-extrabold text-gray-900 mb-3">
+          Update Your Status
+          <br />
+          <span className="text-blue-400">{selectedGoal.goal}</span>
         </h2>
         <p className="text-base text-gray-700">
-          Your target on this goal is xxxxxxxtarget
+          Your target on this goal is {selectedGoal.target}
         </p>
       </div>
-      <div className="mb-5 w-full lg:pl-2 md:pl-0">
+      <div className="mb-5 w-full">
         <label className="text-sm font-medium text-gray-700 w-full block mb-2">
           Current Status
         </label>
         <input
           type="number"
-          value={currentStatus}
+          value={updatedStatus}
           className="rounded-md border border-gray-300 bg-slate-100 px-3 py-3 text-sm focus:outline-indigo-600 block w-full"
           onChange={(e) =>
-            setCurrentStatus(
-              Number(e.target.value) <= target && Number(e.target.value) >= 0
+            setUpdatedStatus(
+              Number(e.target.value) >= 0 &&
+                Number(e.target.value) <= selectedGoal.target
                 ? Number(e.target.value)
-                : currentStatus,
+                : updatedStatus,
             )
           }
         />
