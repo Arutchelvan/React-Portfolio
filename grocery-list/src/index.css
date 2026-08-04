@@ -1,0 +1,217 @@
+/* Google Font */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
+
+@import "tailwindcss";
+
+/* ========================================
+   Theme
+======================================== */
+
+@theme {
+  /* Fonts */
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Inter", sans-serif;
+
+  /* Breakpoint */
+  --breakpoint-xs: 480px;
+}
+
+/* ========================================
+   Light Theme
+======================================== */
+
+:root {
+  /* Backgrounds */
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-card: #ffffff;
+
+  /* Text */
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-border: #e2e8f0;
+
+  /* Brand */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Shadow */
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ========================================
+   Dark Theme
+======================================== */
+
+.dark {
+  /* Backgrounds */
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-card: #1e293b;
+
+  /* Text */
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-border: #334155;
+
+  /* Brand */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #fbbf24;
+  --color-danger: #ef4444;
+
+  /* Shadow */
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ========================================
+   Base
+======================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    color: var(--color-text);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  select {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background: var(--color-primary);
+    color: white;
+  }
+}
+
+/* ========================================
+   Components
+======================================== */
+
+@layer components {
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  .card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    @apply p-6;
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-hover);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .input {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    @apply w-full px-4 py-3 rounded-lg outline-none;
+  }
+
+  .input:focus {
+    border-color: var(--color-primary);
+  }
+}
+
+/* ========================================
+   Utilities
+======================================== */
+
+@layer utilities {
+  .bg-theme {
+    background: var(--color-background);
+  }
+
+  .bg-surface {
+    background: var(--color-surface);
+  }
+
+  .text-theme {
+    color: var(--color-text);
+  }
+
+  .text-muted {
+    color: var(--color-text-secondary);
+  }
+
+  .border-theme {
+    border-color: var(--color-border);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
