@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaChevronRight, FaCheck, FaCartPlus } from "react-icons/fa";
 
 const indianGroceryData = [
   // 1. ATTA, RICE & DAL
@@ -17,7 +18,7 @@ const indianGroceryData = [
         unit: "bag",
         image:
           "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400",
-        isAvailable: true,
+        isAvailable: false,
         description: "Made from the finest grains.",
       },
       {
@@ -1109,33 +1110,270 @@ const indianGroceryData = [
 
 export default function App() {
   const [groceryData, setGroceryData] = useState(indianGroceryData);
+  // Store just the string name, not the whole object
+  const [activeCategoryName, setActiveCategoryName] = useState(
+    indianGroceryData[0].category,
+  );
+  const activeCategory =
+    groceryData.find((cat) => cat.category === activeCategoryName) ||
+    groceryData[0];
+
+  const cartCount = groceryData
+    .flatMap((cat) => cat.products)
+    .filter((p) => p.cart).length;
+
+  function handleUpdationOfCart(toAddCartCateProd) {
+    const [targetCategory, targetProductId] = toAddCartCateProd;
+
+    setGroceryData((prevGroceryData) => {
+      return prevGroceryData.map((cat) => {
+        // 1. Find the matching category
+        if (cat.category === targetCategory) {
+          return {
+            ...cat,
+            // 2. Map through products in that category
+            products: cat.products.map((prod) => {
+              // 3. Find the matching product ID
+              if (prod.id === targetProductId) {
+                // 4. Return product with cart: true
+                return { ...prod, cart: true };
+              }
+              return prod;
+            }),
+          };
+        }
+        return cat; // Return unchanged categories
+      });
+    });
+  }
+
+  // console.log(activeCategory.category);
   return (
     <section className="h-screen py-5 overflow-hidden">
       <div className="max-w-[calc(100%-2rem)] mx-auto flex gap-3 bg-white/5 h-full rounded-3xl p-3 items-start">
         <div className="flex-3 flex bg-white/10 rounded-3xl gap-3 p-3 h-full items-start">
-          <div className="flex-1 bg-white/10 rounded-3xl p-3 flex   h-auto h-full flex-col">
-            {/* Category Title and No Items */}
+          {/* Left Side - Category Col*/}
+          <div className="flex-1 bg-white/10 rounded-3xl p-3 flex h-full flex-col">
+            {/* Category Title and No. Items */}
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg text-white font-medium">Categories</h4>
               <span className="bg-white text-black h-6 w-6 text-center  font-bold text-xs rounded-full leading-[24px]">
-                5
+                {groceryData.length}
               </span>
             </div>
 
             {/* Categories List */}
-            <CategoryList groceryData={groceryData} />
+            <CategoryList
+              onSelectCategory={(cat) => setActiveCategoryName(cat.category)}
+              activeCategory={activeCategory}
+              groceryData={groceryData}
+            />
           </div>
-          <div className="flex-2 bg-white/10 rounded-3xl p-3 flex justify-between items-center h-auto h-full"></div>
+
+          {/* Middle - Product Col*/}
+          <div className="flex-2 bg-white/10 rounded-3xl p-3 flex flex-col h-full">
+            {/* Selected Category Title and No. Items */}
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-lg text-white font-medium">
+                {activeCategory.category}
+              </h4>
+              <span className="bg-white text-black h-6 w-6 text-center  font-bold text-xs rounded-full leading-[24px]">
+                {activeCategory.products.length}
+              </span>
+            </div>
+
+            {/* Selected Product List */}
+            <ProductList
+              activeCategory={activeCategory}
+              onClickAddToCart={handleUpdationOfCart}
+            />
+          </div>
         </div>
 
-        <div className="flex-1 flex bg-white/10 rounded-3xl p-3 h-full items-start">
-          <h4 className="text-lg text-white font-medium">Cart Items</h4>
+        <div className="flex-1 bg-white/10 rounded-3xl p-3 h-full overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-lg text-white font-medium">Cart Items</h4>
+            <span className="bg-white text-black h-6 w-6 text-center  font-bold text-xs rounded-full leading-6">
+              {cartCount}
+            </span>
+          </div>
+          <CartList groceryData={groceryData} />
         </div>
       </div>
     </section>
   );
 }
 
-function CategoryList({ groceryData }) {
-  return <div className="p-3 flex bg-white/10 rounded-3xl p-3"></div>;
+function CategoryList({ groceryData, onSelectCategory, activeCategory }) {
+  return (
+    <div className="overflow-y-scroll custom-scrollbar rounded-2xl pr-3">
+      {groceryData.map((grocery) => (
+        <CategoryItem
+          key={grocery.category}
+          grocery={grocery}
+          onSelectCategory={onSelectCategory}
+          activeCategory={activeCategory}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CategoryItem({ grocery, onSelectCategory, activeCategory }) {
+  const isActive = activeCategory?.category === grocery.category;
+
+  function handleCategoryClick() {
+    onSelectCategory(grocery);
+  }
+  return (
+    <div
+      className={`p-3 flex rounded-3xl mb-3 gap-2 transition-all duration-500 cursor-pointer ${isActive ? "bg-black" : "bg-white/10"}`}
+      key={grocery.category}
+      onClick={handleCategoryClick}
+    >
+      <div className="flex-1 aspect-[16/13.5] rounded-md relative overflow-hidden">
+        <img
+          src={grocery.image}
+          className="object-top object-cover absolute w-full h-full left-0 top-0"
+        />
+      </div>
+      <div className="flex-4 flex items-center justify-between">
+        <div className="flex flex-col">
+          <p className="text-md text-white">{grocery.category}</p>
+          <p className="text-xs text-white">
+            {grocery.products.length} - Products
+          </p>
+        </div>
+        <button
+          className="text-[12px] w-6 h-6 rounded-full flex items-center justify-center bg-white text-black"
+          onClick={handleCategoryClick}
+        >
+          <FaChevronRight />
+        </button>
+      </div>
+    </div>
+  );
+}
+function ProductList({ activeCategory, onClickAddToCart }) {
+  const products = activeCategory.products;
+  return (
+    <div className="overflow-y-scroll custom-scrollbar rounded-2xl pr-3 h-full">
+      {products.map((product) => (
+        <ProductItem
+          productData={product}
+          key={product.id}
+          onClickAddToCart={onClickAddToCart}
+          activeCategory={activeCategory}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ProductItem({ productData, onClickAddToCart, activeCategory }) {
+  function handleAddCart() {
+    const toAddCartCateProd = [activeCategory.category, productData.id];
+    onClickAddToCart(toAddCartCateProd);
+  }
+  return (
+    <div
+      className={`p-3 rounded-3xl mb-3 flex items-stretch gap-3 ${!productData.isAvailable ? "pointer-events-none bg-red-600/50" : "bg-white/10"}`}
+    >
+      <div className="flex-1/12 aspect-16/13.5 rounded-md relative overflow-hidden">
+        <img
+          src={productData.image}
+          className="object-center object-cover absolute w-full h-full left-0 top-0"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://picsum.photos/seed/picsum/1280/901";
+          }}
+        />
+      </div>
+      <div className="flex-4">
+        <h6 className="text-xs font-extrabold">
+          {productData.brand}{" "}
+          {!productData.isAvailable && (
+            <span className="bg-black p-1 text-[8px] rounded-full ml-2">
+              Not Available
+            </span>
+          )}
+        </h6>
+        <h5 className="text-md font-bold">{productData.name}</h5>
+        <p className="text-sm">{productData.description}</p>
+        <p className="text-sm">
+          Available Quantity : {productData.availableQuantity}
+        </p>
+      </div>
+      <div className="flex-2 flex justify-between flex-col">
+        <div>
+          <p className="text-sm">Price : ₹{productData.price}</p>
+          <p className="text-sm mb-2">
+            Wight : {productData.weight}/{productData.unit}
+          </p>
+        </div>
+        {productData.isAvailable &&
+          (productData.cart ? (
+            <button className="bg-blue-600 px-2 py-1 rounded-sm text-xs font-bold text-white flex gap-1 items-center cursor-default">
+              In Cart <FaCheck />
+            </button>
+          ) : (
+            <button
+              className="flex gap-1 items-center bg-green-700 px-2 py-1 rounded-sm text-xs font-bold w-fit hover:bg-blue-500 transition-all duration-500"
+              onClick={handleAddCart}
+            >
+              Add To Cart <FaCartPlus />
+            </button>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function CartList({ groceryData }) {
+  const productsInCart = groceryData
+    .flatMap((category) => category.products)
+    .filter((products) => products?.cart === true);
+  console.log(productsInCart);
+  return (
+    <div className="overflow-y-scroll custom-scrollbar rounded-2xl pr-3 h-full">
+      {productsInCart.length > 0 ? (
+        productsInCart.map((product) => (
+          <CartItem product={product} key={product.id} />
+        ))
+      ) : (
+        <p className="text-white/50 text-center mt-10">Cart is empty</p>
+      )}
+    </div>
+  );
+}
+
+function CartItem({ product }) {
+  return (
+    <div className={`p-3 rounded-3xl mb-3 flex gap-3`}>
+      <div className="flex-1 aspect-16/13.5 rounded-md relative overflow-hidden">
+        <img
+          src="https://picsum.photos/seed/picsum/1280/901"
+          className="object-center object-cover absolute w-full h-full left-0 top-0"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://picsum.photos/seed/picsum/1280/901";
+          }}
+        />
+      </div>
+      <div className="flex-2">
+        <h5 className="text-sm font-bold">productData.name</h5>
+        <p className="text-sm">Total : ₹10</p>
+      </div>
+      <div className="flex-2">
+        <p className="text-sm mb-2">Quantity</p>
+        <input
+          type="number"
+          className="w-full px-2 py-1 border border-gray-300 rounded-sm 
+         text-white placeholder-gray-400
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+         transition-all duration-200"
+        />
+      </div>
+    </div>
+  );
 }
