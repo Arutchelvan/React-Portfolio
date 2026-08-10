@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaChevronRight, FaCheck, FaCartPlus } from "react-icons/fa";
+import { FaChevronRight, FaCheck, FaCartPlus, FaTimes } from "react-icons/fa";
 
 const indianGroceryData = [
   // 1. ATTA, RICE & DAL
@@ -1114,6 +1114,7 @@ export default function App() {
   const [activeCategoryName, setActiveCategoryName] = useState(
     indianGroceryData[0].category,
   );
+  const [totalCartAmount, setTotalCartAmount] = useState(0);
   const activeCategory =
     groceryData.find((cat) => cat.category === activeCategoryName) ||
     groceryData[0];
@@ -1136,6 +1137,7 @@ export default function App() {
               // 3. Find the matching product ID
               if (prod.id === targetProductId) {
                 // 4. Return product with cart: true
+                setTotalCartAmount(totalCartAmount + prod.price);
                 return { ...prod, cart: true };
               }
               return prod;
@@ -1197,7 +1199,14 @@ export default function App() {
               {cartCount}
             </span>
           </div>
-          <CartList groceryData={groceryData} />
+          <CartList
+            groceryData={groceryData}
+            totalCartAmount={totalCartAmount}
+            onChangeTotalCartAmount={setTotalCartAmount}
+          />
+          <div className="p-3 bg-white/10 rounded-3xl">
+            <p>Total Amount: ₹{totalCartAmount}</p>
+          </div>
         </div>
       </div>
     </section>
@@ -1313,12 +1322,12 @@ function ProductItem({ productData, onClickAddToCart, activeCategory }) {
         </div>
         {productData.isAvailable &&
           (productData.cart ? (
-            <button className="bg-blue-600 px-2 py-1 rounded-sm text-xs font-bold text-white flex gap-1 items-center cursor-default">
+            <button className="bg-blue-600 px-2 py-1 rounded-sm text-xs font-bold text-white w-fit flex gap-1 items-center cursor-default mr-0 ml-auto">
               In Cart <FaCheck />
             </button>
           ) : (
             <button
-              className="flex gap-1 items-center bg-green-700 px-2 py-1 rounded-sm text-xs font-bold w-fit hover:bg-blue-500 transition-all duration-500"
+              className="flex gap-1 items-center bg-green-700 px-2 py-1 rounded-sm text-xs font-bold w-fit mr-0 ml-auto hover:bg-blue-500 transition-all duration-500"
               onClick={handleAddCart}
             >
               Add To Cart <FaCartPlus />
@@ -1329,16 +1338,21 @@ function ProductItem({ productData, onClickAddToCart, activeCategory }) {
   );
 }
 
-function CartList({ groceryData }) {
+function CartList({ groceryData, totalCartAmount, onChangeTotalCartAmount }) {
   const productsInCart = groceryData
     .flatMap((category) => category.products)
     .filter((products) => products?.cart === true);
-  console.log(productsInCart);
+
   return (
-    <div className="overflow-y-scroll custom-scrollbar rounded-2xl pr-3 h-full">
+    <div className="overflow-y-auto custom-scrollbar rounded-2xl pr-3 h-full">
       {productsInCart.length > 0 ? (
         productsInCart.map((product) => (
-          <CartItem product={product} key={product.id} />
+          <CartItem
+            product={product}
+            key={product.id}
+            totalCartAmount={totalCartAmount}
+            onChangeTotalCartAmount={onChangeTotalCartAmount}
+          />
         ))
       ) : (
         <p className="text-white/50 text-center mt-10">Cart is empty</p>
@@ -1347,12 +1361,30 @@ function CartList({ groceryData }) {
   );
 }
 
-function CartItem({ product }) {
+function CartItem({ product, totalCartAmount, onChangeTotalCartAmount }) {
+  const [quantity, setQuantity] = useState(1);
+
+  const calcTotalAmount = Number(product.price) * quantity;
+  function onHandleQuantity(e) {
+    setQuantity(
+      Number(e.target.value) > 0 && Number(e.target.value) < 10
+        ? Number(e.target.value)
+        : quantity,
+    );
+    onChangeTotalCartAmount(
+      Number(e.target.value) > quantity && Number(e.target.value) > 0
+        ? totalCartAmount + calcTotalAmount
+        : totalCartAmount - calcTotalAmount,
+    );
+  }
+  //
   return (
-    <div className={`p-3 rounded-3xl mb-3 flex gap-3`}>
+    <div
+      className={`p-3 mb-3 flex gap-3 border-bottom border-b border-b-gray-100 relative`}
+    >
       <div className="flex-1 aspect-16/13.5 rounded-md relative overflow-hidden">
         <img
-          src="https://picsum.photos/seed/picsum/1280/901"
+          src={product.image}
           className="object-center object-cover absolute w-full h-full left-0 top-0"
           onError={(e) => {
             e.target.onerror = null;
@@ -1361,19 +1393,27 @@ function CartItem({ product }) {
         />
       </div>
       <div className="flex-2">
-        <h5 className="text-sm font-bold">productData.name</h5>
-        <p className="text-sm">Total : ₹10</p>
+        <h5 className="text-sm font-bold">{product.name}</h5>
+        <p className="text-sm">Total : ₹{calcTotalAmount}</p>
       </div>
-      <div className="flex-2">
-        <p className="text-sm mb-2">Quantity</p>
+      <div className="flex-1">
+        <p className="text-sm mb-2">Quantity: </p>
         <input
           type="number"
           className="w-full px-2 py-1 border border-gray-300 rounded-sm 
          text-white placeholder-gray-400
          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
          transition-all duration-200"
+          value={quantity}
+          onChange={onHandleQuantity}
         />
       </div>
+      <button
+        className="absolute top-0 right-0 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-red-500 text-white"
+        onClick={handleCartRemoveItem}
+      >
+        <FaTimes />
+      </button>
     </div>
   );
 }
