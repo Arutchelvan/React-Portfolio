@@ -18,7 +18,7 @@ const indianGroceryData = [
         unit: "bag",
         image:
           "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400",
-        isAvailable: false,
+        isAvailable: true,
         description: "Made from the finest grains.",
       },
       {
@@ -135,7 +135,7 @@ const indianGroceryData = [
         unit: "pack",
         image:
           "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=400",
-        isAvailable: true,
+        isAvailable: false,
         description: "Authentic taste for Dal Makhani.",
       },
     ],
@@ -1138,7 +1138,11 @@ export default function App() {
               if (prod.id === targetProductId) {
                 // 4. Return product with cart: true
                 setTotalCartAmount(totalCartAmount + prod.price);
-                return { ...prod, cart: true };
+                return {
+                  ...prod,
+                  availableQuantity: prod.availableQuantity - 1,
+                  cart: true,
+                };
               }
               return prod;
             }),
@@ -1148,14 +1152,39 @@ export default function App() {
       });
     });
   }
+  function onRemoveCartItem(removedProduct) {
+    const [removedProductId, removedCategoryName] = removedProduct;
+
+    setGroceryData((prevGroceryData) => {
+      return prevGroceryData.map((category) => {
+        if (category.category === removedCategoryName) {
+          return {
+            ...category,
+            products: category.products.map((product) => {
+              if (product.id === removedProductId) {
+                setTotalCartAmount(totalCartAmount - product.price);
+                return {
+                  ...product,
+                  availableQuantity: product.availableQuantity + 1,
+                  cart: false,
+                };
+              }
+              return product;
+            }),
+          };
+        }
+        return category;
+      });
+    });
+  }
 
   // console.log(activeCategory.category);
   return (
-    <section className="h-screen py-5 overflow-hidden">
-      <div className="max-w-[calc(100%-2rem)] mx-auto flex gap-3 bg-white/5 h-full rounded-3xl p-3 items-start">
-        <div className="flex-3 flex bg-white/10 rounded-3xl gap-3 p-3 h-full items-start">
+    <section className="min-h-screen md:min-h-screen lg:h-screen py-5 overflow-hidden">
+      <div className="max-w-[calc(100%-2rem)] mx-auto flex flex-col md:flex-col lg:flex-row gap-3 bg-white/5 min-h-screen md:min-h-screen lg:h-full rounded-3xl p-3 items-start overflow-y-auto">
+        <div className="flex-12 md:flex-12 lg:flex-3 xl:flex-3 flex flex-col sm:flex-col md:flex-row  bg-white/10 rounded-3xl gap-3 p-3 h-screen md:h-screen lg:h-full items-start w-full md:w-full">
           {/* Left Side - Category Col*/}
-          <div className="flex-1 bg-white/10 rounded-3xl p-3 flex h-full flex-col">
+          <div className="flex-12 sm:flex-12 md:flex-1 bg-white/10 rounded-3xl p-3 flex h-screen md:h-screen lg:h-full w-full flex-col">
             {/* Category Title and No. Items */}
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg text-white font-medium">Categories</h4>
@@ -1173,7 +1202,7 @@ export default function App() {
           </div>
 
           {/* Middle - Product Col*/}
-          <div className="flex-2 bg-white/10 rounded-3xl p-3 flex flex-col h-full">
+          <div className="flex-12 sm:flex-12 md:flex-2 bg-white/10 rounded-3xl p-3 flex flex-col h-screen md:h-screen w-full lg:h-full">
             {/* Selected Category Title and No. Items */}
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg text-white font-medium">
@@ -1192,7 +1221,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex-1 bg-white/10 rounded-3xl p-3 h-full overflow-hidden flex flex-col">
+        <div className="flex-12 md:flex-12 lg:flex-1 xl:flex-1 bg-white/10 rounded-3xl p-3 h-screen md:h-screen lg:h-full overflow-hidden flex flex-col w-full md:w-full">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-lg text-white font-medium">Cart Items</h4>
             <span className="bg-white text-black h-6 w-6 text-center  font-bold text-xs rounded-full leading-6">
@@ -1203,6 +1232,7 @@ export default function App() {
             groceryData={groceryData}
             totalCartAmount={totalCartAmount}
             onChangeTotalCartAmount={setTotalCartAmount}
+            onRemoveCartItem={onRemoveCartItem}
           />
           <div className="p-3 bg-white/10 rounded-3xl">
             <p>Total Amount: ₹{totalCartAmount}</p>
@@ -1215,7 +1245,7 @@ export default function App() {
 
 function CategoryList({ groceryData, onSelectCategory, activeCategory }) {
   return (
-    <div className="overflow-y-scroll custom-scrollbar rounded-2xl pr-3">
+    <div className="overflow-y-auto custom-scrollbar rounded-2xl pr-3">
       {groceryData.map((grocery) => (
         <CategoryItem
           key={grocery.category}
@@ -1236,19 +1266,21 @@ function CategoryItem({ grocery, onSelectCategory, activeCategory }) {
   }
   return (
     <div
-      className={`p-3 flex rounded-3xl mb-3 gap-2 transition-all duration-500 cursor-pointer ${isActive ? "bg-black" : "bg-white/10"}`}
+      className={`p-3 flex flex-col sm:flex-row rounded-3xl mb-3 gap-2 transition-all duration-500 cursor-pointer ${isActive ? "bg-black" : "bg-white/10"}`}
       key={grocery.category}
       onClick={handleCategoryClick}
     >
-      <div className="flex-1 aspect-[16/13.5] rounded-md relative overflow-hidden">
+      <div className="flex-1 w-1/3 sm:w-auto aspect-[16/13.5] rounded-md relative overflow-hidden">
         <img
           src={grocery.image}
           className="object-top object-cover absolute w-full h-full left-0 top-0"
         />
       </div>
-      <div className="flex-4 flex items-center justify-between">
+      <div className="flex-4 sm:w-auto flex items-center justify-between">
         <div className="flex flex-col">
-          <p className="text-md text-white">{grocery.category}</p>
+          <p className="text-sm md:text-sm lg:text-base text-white">
+            {grocery.category}
+          </p>
           <p className="text-xs text-white">
             {grocery.products.length} - Products
           </p>
@@ -1266,7 +1298,7 @@ function CategoryItem({ grocery, onSelectCategory, activeCategory }) {
 function ProductList({ activeCategory, onClickAddToCart }) {
   const products = activeCategory.products;
   return (
-    <div className="overflow-y-scroll custom-scrollbar rounded-2xl pr-3 h-full">
+    <div className="overflow-y-auto custom-scrollbar rounded-2xl pr-3 h-full">
       {products.map((product) => (
         <ProductItem
           productData={product}
@@ -1286,9 +1318,9 @@ function ProductItem({ productData, onClickAddToCart, activeCategory }) {
   }
   return (
     <div
-      className={`p-3 rounded-3xl mb-3 flex items-stretch gap-3 ${!productData.isAvailable ? "pointer-events-none bg-red-600/50" : "bg-white/10"}`}
+      className={`p-3 rounded-3xl mb-3 flex flex-col sm:flex-row items-stretch gap-3 ${!productData.isAvailable ? "pointer-events-none bg-red-600/50" : "bg-white/10"}`}
     >
-      <div className="flex-1/12 aspect-16/13.5 rounded-md relative overflow-hidden">
+      <div className="flex-1/12 aspect-16/13.5 rounded-md relative overflow-hidden  w-1/3 sm:w-auto ">
         <img
           src={productData.image}
           className="object-center object-cover absolute w-full h-full left-0 top-0"
@@ -1307,7 +1339,9 @@ function ProductItem({ productData, onClickAddToCart, activeCategory }) {
             </span>
           )}
         </h6>
-        <h5 className="text-md font-bold">{productData.name}</h5>
+        <h5 className="text-sm md:text-sm lg:text-base font-bold">
+          {productData.name}
+        </h5>
         <p className="text-sm">{productData.description}</p>
         <p className="text-sm">
           Available Quantity : {productData.availableQuantity}
@@ -1338,11 +1372,21 @@ function ProductItem({ productData, onClickAddToCart, activeCategory }) {
   );
 }
 
-function CartList({ groceryData, totalCartAmount, onChangeTotalCartAmount }) {
-  const productsInCart = groceryData
-    .flatMap((category) => category.products)
-    .filter((products) => products?.cart === true);
-
+function CartList({
+  groceryData,
+  totalCartAmount,
+  onChangeTotalCartAmount,
+  onRemoveCartItem,
+}) {
+  const productsInCart = groceryData.flatMap((category) => {
+    return category.products
+      .filter((product) => {
+        return product.cart == true;
+      })
+      .map((product) => {
+        return { ...product, categoryName: category.category };
+      });
+  });
   return (
     <div className="overflow-y-auto custom-scrollbar rounded-2xl pr-3 h-full">
       {productsInCart.length > 0 ? (
@@ -1352,6 +1396,7 @@ function CartList({ groceryData, totalCartAmount, onChangeTotalCartAmount }) {
             key={product.id}
             totalCartAmount={totalCartAmount}
             onChangeTotalCartAmount={onChangeTotalCartAmount}
+            onRemoveCartItem={onRemoveCartItem}
           />
         ))
       ) : (
@@ -1361,28 +1406,42 @@ function CartList({ groceryData, totalCartAmount, onChangeTotalCartAmount }) {
   );
 }
 
-function CartItem({ product, totalCartAmount, onChangeTotalCartAmount }) {
+function CartItem({
+  product,
+  totalCartAmount,
+  onChangeTotalCartAmount,
+  onRemoveCartItem,
+}) {
   const [quantity, setQuantity] = useState(1);
 
+  console.log(product);
   const calcTotalAmount = Number(product.price) * quantity;
   function onHandleQuantity(e) {
+    const valid = Number(e.target.value) > 0 && Number(e.target.value) < 10;
     setQuantity(
       Number(e.target.value) > 0 && Number(e.target.value) < 10
         ? Number(e.target.value)
         : quantity,
     );
+    if (!valid) return;
     onChangeTotalCartAmount(
       Number(e.target.value) > quantity && Number(e.target.value) > 0
         ? totalCartAmount + calcTotalAmount
         : totalCartAmount - calcTotalAmount,
     );
   }
+
+  function handleCartRemoveItem(productId, productCategory) {
+    const removedProduct = [productId, productCategory];
+    console.log(product);
+    onRemoveCartItem(removedProduct);
+  }
   //
   return (
     <div
-      className={`p-3 mb-3 flex gap-3 border-bottom border-b border-b-gray-100 relative`}
+      className={`p-3 mb-3 flex gap-3 border-bottom border-b border-b-gray-100 relative flex-col sm:flex-row`}
     >
-      <div className="flex-1 aspect-16/13.5 rounded-md relative overflow-hidden">
+      <div className="flex-1 w-1/3 sm:w-auto aspect-16/13.5 rounded-md relative overflow-hidden">
         <img
           src={product.image}
           className="object-center object-cover absolute w-full h-full left-0 top-0"
@@ -1400,17 +1459,18 @@ function CartItem({ product, totalCartAmount, onChangeTotalCartAmount }) {
         <p className="text-sm mb-2">Quantity: </p>
         <input
           type="number"
-          className="w-full px-2 py-1 border border-gray-300 rounded-sm 
-         text-white placeholder-gray-400
+          className="w-full px-2 py-1 border border-black rounded-sm 
+         text-white placeholder-gray-400 bg-black
          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
          transition-all duration-200"
           value={quantity}
           onChange={onHandleQuantity}
+          disabled
         />
       </div>
       <button
         className="absolute top-0 right-0 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-red-500 text-white"
-        onClick={handleCartRemoveItem}
+        onClick={() => handleCartRemoveItem(product.id, product.categoryName)}
       >
         <FaTimes />
       </button>
